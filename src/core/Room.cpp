@@ -1,122 +1,96 @@
-#include "core/Room.hpp"
-#include <sstream>
-#include <algorithm>
+#include "Room.hpp"
 #include <iostream>
-#include <iomanip>  // For std::setw
+#include <algorithm>
+#include <sstream>
 
-Room::Room(const std::string &name, const std::string &desc) 
-    : name(name), description(desc) {}
+Room::Room(const std::string& name, const std::string& description)
+    : name(name), description(description) {}
 
-void Room::addPlayer(const std::string &playerName) {
-    players.push_back(playerName);
-}
-
-void Room::removePlayer(const std::string &playerName) {
-    players.erase(std::remove(players.begin(), players.end(), playerName), players.end());
-}
-
-void Room::describe() const {
-    std::cout << "\n====================== Room Description ======================\n";
-    std::cout << description << "\n\n";
-
-    // Display players in the room
-    if (!players.empty()) {
-        std::cout << "Players in the room:\n";
-        for (const auto &player : players) {
-            std::cout << " - " << player << std::endl;
-        }
-        std::cout << "\n";
-    }
-
-    // Display exits
-    std::cout << "Exits:\n";
-    for (const auto &exit : exits) {
-        std::cout << " - " << exit.first << std::endl;
-    }
-    std::cout << "\n";
-
-    // Display furniture in the room
-    if (!furniture.empty()) {
-        std::cout << "Furniture in the room:\n";
-        for (const auto &furn : furniture) {
-            std::cout << " - " << furn->name << std::endl;  // Use -> to access the name
-        }
-        std::cout << "\n";
-    }
-
-    // Display objects in the room
-    if (!objects.empty()) {
-        std::cout << "Objects in the room:\n";
-        for (const auto &object : objects) {
-            std::cout << " - " << object.name << std::endl;
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "==============================================================\n\n";
-}
-
-void Room::addExit(const std::string &direction, Room *room) {
+// Adds an exit to another room and marks it as unlocked by default
+void Room::addExit(const std::string& direction, Room* room) {
     exits[direction] = room;
+    lockedExits[direction] = false;
 }
 
-Room* Room::getExit(const std::string &direction) const {
-    auto it = exits.find(direction);
-    if (it != exits.end()) {
-        return it->second;
+// Locks the specified exit
+void Room::lockExit(const std::string& direction) {
+    if (exits.find(direction) != exits.end()) {
+        lockedExits[direction] = true;
     }
-    return nullptr;
 }
 
-void Room::addObject(const Object &object) {
+// Unlocks the specified exit
+void Room::unlockExit(const std::string& direction) {
+    if (exits.find(direction) != exits.end()) {
+        lockedExits[direction] = false;
+    }
+}
+
+// Checks if the specified exit is locked
+bool Room::isExitLocked(const std::string& direction) const {
+    auto it = lockedExits.find(direction);
+    return it != lockedExits.end() && it->second;
+}
+
+// Retrieves the room an exit leads to, or nullptr if locked
+Room* Room::getExit(const std::string& direction) const {
+    if (isExitLocked(direction)) {
+        std::cout << "The door to the " << direction << " is locked.\n";
+        return nullptr;
+    }
+
+    auto it = exits.find(direction);
+    return it != exits.end() ? it->second : nullptr;
+}
+
+// Adds an object to the room
+void Room::addObject(const Object& object) {
     objects.push_back(object);
 }
 
-void Room::addFurniture(Furniture *furn) {
+// Adds furniture to the room
+void Room::addFurniture(Furniture* furn) {
     furniture.push_back(furn);
 }
 
-Object* Room::getObject(const std::string &objectName) {
-    for (auto &object : objects) {
-        if (object.name == objectName) {
-            return &object;
-        }
-    }
-    return nullptr;
+// Retrieves an object in the room by name
+Object* Room::getObject(const std::string& objectName) {
+    auto it = std::find_if(objects.begin(), objects.end(),
+                           [&objectName](const Object& obj) {
+                               return obj.name == objectName;
+                           });
+    return it != objects.end() ? &(*it) : nullptr;
 }
 
-Furniture* Room::getFurniture(const std::string &furnName) {
-    for (auto &furn : furniture) {
-        if (furn->name == furnName) {  // Use -> to access the name
-            return furn;
-        }
-    }
-    return nullptr;
+// Retrieves furniture in the room by name
+Furniture* Room::getFurniture(const std::string& furnName) {
+    auto it = std::find_if(furniture.begin(), furniture.end(),
+                           [&furnName](Furniture* furn) {
+                               return furn->name == furnName;
+                           });
+    return it != furniture.end() ? *it : nullptr;
 }
 
-void Room::removeObject(const std::string &objectName) {
-    auto it = objects.begin();
-    while (it != objects.end()) {
-        if (it->name == objectName) {
-            it = objects.erase(it);
-            std::cout << objectName << " has been removed from the room." << std::endl;
-            return;
-        } else {
-            ++it;
-        }
-    }
-    std::cout << objectName << " was not found in the room." << std::endl;
+// Removes an object from the room by name
+void Room::removeObject(const std::string& objectName) {
+    objects.erase(std::remove_if(objects.begin(), objects.end(),
+                                 [&objectName](const Object& obj) {
+                                     return obj.name == objectName;
+                                 }),
+                  objects.end());
 }
 
+// Serializes objects in the room to a string
 std::string Room::serializeObjects() const {
     std::ostringstream oss;
-    for (const auto &object : objects) {
+    for (const auto& object : objects) {
         oss << object.name << "," << object.description << ";";
     }
     return oss.str();
 }
 
-void Room::deserializeObjects(const std::string &objectData) {
+// Deserializes a string of objects and adds them to the room
+void Room::deserializeObjects(const std::string& objectData) {
     objects.clear();
     std::istringstream iss(objectData);
     std::string item;
@@ -129,4 +103,29 @@ void Room::deserializeObjects(const std::string &objectData) {
             }
         }
     }
+}
+
+// Describes the room, its contents, and exits
+void Room::describe() const {
+    std::cout << description << std::endl;
+
+    if (!furniture.empty()) {
+        std::cout << "Furniture in the room:" << std::endl;
+        for (const auto& furn : furniture) {
+            std::cout << " - " << furn->name << std::endl;
+        }
+    }
+
+    if (!objects.empty()) {
+        std::cout << "Objects in the room:" << std::endl;
+        for (const auto& object : objects) {
+            std::cout << " - " << object.name << std::endl;
+        }
+    }
+
+    std::cout << "Exits: ";
+    for (const auto& exit : exits) {
+        std::cout << exit.first << " ";
+    }
+    std::cout << std::endl;
 }
