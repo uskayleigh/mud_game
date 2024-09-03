@@ -1,7 +1,6 @@
-// Player.cpp
 #include "Player.hpp"
 #include <iostream>
-#include <algorithm>
+#include <sstream>
 
 Player::Player(const std::string &name) : name(name) {}
 
@@ -11,11 +10,14 @@ void Player::addObject(const Object &object) {
 }
 
 void Player::removeObject(const std::string &objectName) {
-    for (auto it = inventory.begin(); it != inventory.end(); ++it) {
+    auto it = inventory.begin();
+    while (it != inventory.end()) {
         if (it->name == objectName) {
             inventory.erase(it);
             std::cout << objectName << " has been removed from your inventory." << std::endl;
             return;
+        } else {
+            ++it;
         }
     }
     std::cout << objectName << " was not found in your inventory." << std::endl;
@@ -38,4 +40,27 @@ Object* Player::getObject(const std::string &objectName) {
         }
     }
     return nullptr;
+}
+
+std::string Player::serializeInventory() const {
+    std::ostringstream oss;
+    for (const auto &object : inventory) {
+        oss << object.name << "," << object.description << ";";
+    }
+    return oss.str();
+}
+
+void Player::deserializeInventory(const std::string &inventoryData) {
+    inventory.clear();
+    std::istringstream iss(inventoryData);
+    std::string item;
+    while (std::getline(iss, item, ';')) {
+        if (!item.empty()) {
+            std::istringstream itemStream(item);
+            std::string name, description;
+            if (std::getline(itemStream, name, ',') && std::getline(itemStream, description)) {
+                inventory.push_back(Object(name, description));
+            }
+        }
+    }
 }

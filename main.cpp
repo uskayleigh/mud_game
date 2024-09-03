@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-    // Updated room descriptions
+    // Room descriptions
     Room mainRoom("You are in a small, dimly lit room. The walls are damp, and there is a musty smell in the air. There is a single door on the northern wall.");
     Room hallway("You are in a long, narrow hallway. There are doors on either side, north and south.");
     Room kitchen("You are in a kitchen. The smell of food fills the air. There is a single door along the southern wall.");
@@ -26,10 +26,23 @@ int main() {
 
     // Player setup
     std::string playerName;
-    std::cout << "Enter your name: ";
-    std::cin >> playerName;
-    Player player(playerName);
+    Player player("default");  // Initial player object
     Room* currentRoom = &mainRoom;
+
+    // Load the game state if it exists
+    std::string currentRoomName;
+    if (loadGameState(playerName, currentRoomName, player, mainRoom, hallway, kitchen)) {
+        std::cout << "Welcome back, " << playerName << "!" << std::endl;
+        if (currentRoomName == "mainRoom") currentRoom = &mainRoom;
+        else if (currentRoomName == "hallway") currentRoom = &hallway;
+        else if (currentRoomName == "kitchen") currentRoom = &kitchen;
+    } else {
+        // No saved state, starting a new game
+        std::cout << "Enter your name: ";
+        std::cin >> playerName;
+        player = Player(playerName);
+        currentRoom = &mainRoom;
+    }
 
     // Main game loop
     std::string command;
@@ -92,17 +105,18 @@ int main() {
         } else if (command == "inventory") {
             player.showInventory();
         } else if (command == "save") {
-            std::cout << "Attempting to save game state..." << std::endl;
-            std::cout << "Player Name: " << playerName << std::endl;
-            std::cout << "Current Room: " << (currentRoom == &mainRoom ? "mainRoom" : currentRoom == &hallway ? "hallway" : "kitchen") << std::endl;
-
             saveGameState(playerName, 
-                        currentRoom == &mainRoom ? "mainRoom" : 
-                        currentRoom == &hallway ? "hallway" : 
-                        "kitchen");
+                          currentRoom == &mainRoom ? "mainRoom" : 
+                          currentRoom == &hallway ? "hallway" : 
+                          "kitchen", 
+                          player, mainRoom, hallway, kitchen);
             std::cout << "Game state saved." << std::endl;
         } else if (command == "quit") {
-            // Save game state (not implemented in this snippet, assume it's similar to before)
+            saveGameState(playerName, 
+                          currentRoom == &mainRoom ? "mainRoom" : 
+                          currentRoom == &hallway ? "hallway" : 
+                          "kitchen", 
+                          player, mainRoom, hallway, kitchen);
             std::cout << "Game state saved. Goodbye!" << std::endl;
             break;
         } else {

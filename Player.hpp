@@ -1,4 +1,3 @@
-// Player.hpp
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
@@ -10,14 +9,18 @@ class Player {
 public:
     Player(const std::string &name);
 
-    void addObject(const Object &object);        // Add an object to the inventory
-    void removeObject(const std::string &objectName); // Remove an object by name
-    void showInventory() const;                 // Display the player's inventory
-    Object* getObject(const std::string &objectName); // Get a pointer to an object in the inventory
+    void addObject(const Object &object);
+    void removeObject(const std::string &objectName);
+    void showInventory() const;
+    Object* getObject(const std::string &objectName);
+
+    // Methods for saving/loading inventory
+    std::string serializeInventory() const;
+    void deserializeInventory(const std::string &inventoryData);
 
 private:
     std::string name;
-    std::vector<Object> inventory;              // The player's inventory
+    std::vector<Object> inventory;
 };
 
 #endif // PLAYER_HPP
