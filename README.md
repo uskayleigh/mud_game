@@ -1,67 +1,70 @@
 
-# Simple C++ Multi-User Dungeon (MUD)
+# Simple Text-Based Adventure Game
 
-This is a basic C++ implementation of a Multi-User Dungeon (MUD). It includes a simple text-based interface where players can explore a small world consisting of interconnected rooms. Players can move between rooms, examine their surroundings, and interact with the environment.
+This is a simple text-based adventure game written in C++. The game allows a player to navigate between rooms, interact with objects and furniture, manage an inventory, and save/load their game state.
 
 ## Features
 
-- Multiple rooms with descriptions.
-- Navigation between rooms using directional commands.
-- Basic command interface with shortcuts.
+- **Room Navigation**: Move between different rooms using commands like `go north`, `go south`, etc., or using shortcuts `n`, `s`, `e`, `w`.
+- **Object Interaction**: Examine furniture and take objects to add to your inventory.
+- **Inventory Management**: View, add, and remove items from your inventory.
+- **Save/Load Game State**: Save your game progress, including your current room, inventory, and room states, and load it later.
 
 ## Requirements
 
-To compile and run this project, you'll need:
+- C++11 or higher
 
-- A C++ compiler (e.g., GCC, Clang, or MSVC).
-- A terminal or command prompt to run the program.
+## Compilation
 
-## Compilation Instructions
+To compile the game, use the following command:
 
-To compile the code, navigate to the directory containing the source file (`mud.cpp`) and run the following command:
-
-```sh
-g++ -o mud mud.cpp
+```bash
+g++ -std=c++11 -o adventure main.cpp Room.cpp Object.cpp Furniture.cpp Player.cpp utils.cpp
 ```
 
-This will generate an executable named `mud`.
+This will generate an executable named `adventure`.
 
-## Running the Program
+## Running the Game
 
-After compiling the program, you can run it by typing:
+To run the game, use the following command:
 
-```sh
-./mud
+```bash
+./adventure
 ```
 
-## How to Play
+## Commands
 
-Once the game starts, you'll be prompted to enter your name. After that, you can explore the rooms using the following commands:
+Once the game is running, you can use the following commands:
 
-- **look**: Describes the current room and lists the players present and available exits.
-- **go <direction>**: Moves you to another room in the specified direction (e.g., `go north`).
-- **n, s, e, w**: Shortcuts for moving north, south, east, and west, respectively.
-- **quit**: Exits the game.
+- `look`: Describe the current room, listing furniture, objects, and exits.
+- `go <direction>`: Move to another room in the specified direction (e.g., `go north`).
+- Shortcuts: `n` (north), `s` (south), `e` (east), `w` (west) for quick movement.
+- `examine <furniture|object>`: Examine furniture or an object in the room.
+- `take <object>`: Take an object and add it to your inventory.
+- `inventory`: Show the current inventory.
+- `save`: Save the current game state.
+- `quit`: Save the game and exit.
 
-### Example Commands
+## Save and Load Game State
 
-```sh
-look
-go north
-n
-s
-quit
-```
+The game automatically loads the last saved state when it starts. The game state includes:
 
-## Expanding the Game
+- Player's name
+- Current room
+- Inventory
+- Room states (objects in each room)
 
-This project is designed to be a starting point for building more complex MUDs. Here are some ideas for expanding the game:
+To save your progress, use the `save` command. The game state is stored in a file named `game_state.txt` in the same directory as the executable.
 
-- **Add more rooms**: Create new rooms with unique descriptions and connect them to the existing rooms.
-- **Implement items**: Allow players to pick up, drop, and use items found in the rooms.
-- **Add NPCs**: Introduce non-player characters that can interact with the players.
-- **Networking**: Extend the game to allow multiple players to connect and interact in real-time.
+## File Structure
+
+- `main.cpp`: The main game loop and command processing.
+- `Room.hpp/cpp`: Handles room descriptions, exits, and objects in each room.
+- `Player.hpp/cpp`: Manages the player's inventory and interactions with objects.
+- `Object.hpp/cpp`: Represents objects that can be interacted with or taken.
+- `Furniture.hpp/cpp`: Represents furniture that can be examined but not taken.
+- `utils.hpp/cpp`: Utility functions for saving and loading the game state.
 
 ## License
 
-This project is open-source and licensed under the MIT License. Feel free to use, modify, and distribute this code as you see fit.
+This project is open source and available under the MIT License.
