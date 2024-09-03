@@ -1,42 +1,57 @@
 #ifndef ROOM_HPP
 #define ROOM_HPP
 
-#include "objects/Object.hpp"
-#include "furniture/Furniture.hpp"
 #include <string>
 #include <map>
 #include <vector>
+#include "furniture/Furniture.hpp"
+#include "objects/Object.hpp"
 
+/**
+ * @brief Represents a room in the game world, containing furniture, objects, and exits.
+ */
 class Room {
 public:
-    Room(const std::string &name, const std::string &description);
+    Room(const std::string& name, const std::string& description);
 
-    void addExit(const std::string &direction, Room *room);
-    Room* getExit(const std::string &direction) const;
+    // Adds an exit to another room in a specified direction
+    void addExit(const std::string& direction, Room* room);
 
-    void addObject(const Object &object);
-    void addFurniture(Furniture *furn);
-    
-    Object* getObject(const std::string &objectName);
-    Furniture* getFurniture(const std::string &furnitureName);
-    
-    void removeObject(const std::string &objectName);
+    // Locks and unlocks an exit in a specified direction
+    void lockExit(const std::string& direction);
+    void unlockExit(const std::string& direction);
+
+    // Checks if an exit is locked
+    bool isExitLocked(const std::string& direction) const;
+
+    // Retrieves the room an exit leads to, considering if it's locked
+    Room* getExit(const std::string& direction) const;
+
+    // Adds objects and furniture to the room
+    void addObject(const Object& object);
+    void addFurniture(Furniture* furniture);
+
+    // Retrieves objects and furniture by name
+    Object* getObject(const std::string& objectName);
+    Furniture* getFurniture(const std::string& furnName);
+
+    // Removes an object from the room by name
+    void removeObject(const std::string& objectName);
+
+    // Serializes and deserializes objects in the room
+    std::string serializeObjects() const;
+    void deserializeObjects(const std::string& objectData);
+
+    // Describes the room's contents and exits
     void describe() const;
-
-    // Serialize and deserialize room objects
-    std::string serializeObjects() const;  // Declaration added
-    void deserializeObjects(const std::string &objectData);  // Declaration added
-
-    void addPlayer(const std::string &playerName);
-    void removePlayer(const std::string &playerName);
 
 private:
     std::string name;
     std::string description;
     std::map<std::string, Room*> exits;
+    std::map<std::string, bool> lockedExits; // Tracks locked exits
     std::vector<Object> objects;
     std::vector<Furniture*> furniture;
-    std::vector<std::string> players;  // For managing players in the room
 };
 
 #endif // ROOM_HPP
