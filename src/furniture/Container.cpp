@@ -1,5 +1,6 @@
 #include "furniture/Container.hpp"
 #include <iostream>
+#include <algorithm>
 
 Container::Container(const std::string &name, const std::string &description)
     : Furniture(name, description), containerOpen(false) {}
@@ -15,9 +16,9 @@ bool Container::isOpen() const {
 void Container::open() {
     if (!containerOpen) {
         containerOpen = true;
-        std::cout << "You open the " << name << "." << std::endl;
+        std::cout << "\n>>> You open the " << name << ". <<<\n";
     } else {
-        std::cout << "The " << name << " is already open." << std::endl;
+        std::cout << "\n>>> The " << name << " is already open. <<<\n";
     }
 }
 
@@ -33,24 +34,30 @@ void Container::describe() const {
 
 void Container::describeContents() const {
     if (!containerOpen) {
-        std::cout << "The " << name << " is closed." << std::endl;
+        std::cout << "\n>>> The " << name << " is closed. <<<\n";
         return;
     }
 
     if (contents.empty()) {
-        std::cout << "The " << name << " is empty." << std::endl;
+        std::cout << "\n>>> The " << name << " is empty. <<<\n";
     } else {
-        std::cout << "The " << name << " contains:" << std::endl;
+        std::cout << "\n>>> The " << name << " contains:\n";
         for (const auto &object : contents) {
-            std::cout << "- " << object.name << ": " << object.description << std::endl;
+            std::cout << " - " << object.name << ": " << object.description << "\n";
         }
+        std::cout << " <<<\n";
     }
 }
 
 void Container::removeObject(const std::string &objectName) {
     auto it = std::remove_if(contents.begin(), contents.end(), 
         [&objectName](const Object &obj) { return obj.name == objectName; });
-    contents.erase(it, contents.end());
+    if (it != contents.end()) {
+        contents.erase(it, contents.end());
+        std::cout << "\n>>> You take the " << objectName << " from the " << name << ". <<<\n";
+    } else {
+        std::cout << "\n>>> The " << objectName << " is not in the " << name << ". <<<\n";
+    }
 }
 
 Object* Container::getObject(const std::string &objectName) {
