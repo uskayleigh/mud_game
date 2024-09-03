@@ -1,2 +1,3 @@
 mud-game
-game_state.txt
+*.txt
+src/main.o

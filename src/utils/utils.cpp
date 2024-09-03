@@ -1,43 +1,52 @@
 #include "utils/utils.hpp"
+#include "core/Room.hpp"
+#include "core/Player.hpp"
 #include <fstream>
 #include <iostream>
 
-bool loadGameState(std::string &playerName, std::string &currentRoomName, Player &player, Room &mainRoom, Room &hallway, Room &kitchen) {
-    std::ifstream file("game_state.txt");
-    if (file.is_open()) {
-        std::getline(file, playerName);
-        std::getline(file, currentRoomName);
-        std::string inventoryData;
-        std::getline(file, inventoryData);
-        player.deserializeInventory(inventoryData);
-        std::string mainRoomData, hallwayData, kitchenData;
-        std::getline(file, mainRoomData);
-        mainRoom.deserializeObjects(mainRoomData);
-        std::getline(file, hallwayData);
-        hallway.deserializeObjects(hallwayData);
-        std::getline(file, kitchenData);
-        kitchen.deserializeObjects(kitchenData);
-        file.close();
-        std::cout << "Loaded game state: " << playerName << " in " << currentRoomName << std::endl;
-        return true;
-    } else {
-        std::cout << "No saved game state found." << std::endl;
+bool saveGameState(const std::string &playerName, const std::string &currentRoomName, const Player &player, const Room &mainRoom, const Room &treasureRoom) {
+    std::ofstream saveFile("savegame.txt");
+    if (!saveFile) {
+        std::cerr << "Error: Could not open save file for writing." << std::endl;
         return false;
     }
+
+    saveFile << playerName << "\n";
+    saveFile << currentRoomName << "\n";
+    saveFile << player.serializeInventory() << "\n";
+    saveFile << "Main Room Objects:\n" << mainRoom.serializeObjects() << "\n";
+    saveFile << "Treasure Room Objects:\n" << treasureRoom.serializeObjects() << "\n";
+    saveFile.close();
+    return true;
 }
 
-void saveGameState(const std::string &playerName, const std::string &currentRoomName, const Player &player, const Room &mainRoom, const Room &hallway, const Room &kitchen) {
-    std::ofstream file("game_state.txt");
-    if (file.is_open()) {
-        file << playerName << std::endl;
-        file << currentRoomName << std::endl;
-        file << player.serializeInventory() << std::endl;
-        file << mainRoom.serializeObjects() << std::endl;
-        file << hallway.serializeObjects() << std::endl;
-        file << kitchen.serializeObjects() << std::endl;
-        file.close();
-        std::cout << "Game state saved: " << playerName << " in " << currentRoomName << std::endl;
-    } else {
-        std::cout << "Unable to save game state." << std::endl;
+bool loadGameState(std::string &playerName, std::string &currentRoomName, Player &player, Room &mainRoom, Room &treasureRoom) {
+    std::ifstream loadFile("savegame.txt");
+    if (!loadFile) {
+        std::cerr << "Error: Could not open save file for reading." << std::endl;
+        return false;
     }
+
+    std::getline(loadFile, playerName);
+    std::getline(loadFile, currentRoomName);
+    
+    std::string inventoryData;
+    std::getline(loadFile, inventoryData);
+    player.deserializeInventory(inventoryData);
+
+    std::string line;
+    while (std::getline(loadFile, line)) {
+        if (line == "Main Room Objects:") {
+            std::string objectData;
+            std::getline(loadFile, objectData);
+            mainRoom.deserializeObjects(objectData);
+        } else if (line == "Treasure Room Objects:") {
+            std::string objectData;
+            std::getline(loadFile, objectData);
+            treasureRoom.deserializeObjects(objectData);
+        }
+    }
+
+    loadFile.close();
+    return true;
 }

@@ -11,55 +11,42 @@
 int main() {
     Config config;  // Initialize the configuration
     
-    // Room descriptions
-    Room mainRoom("You are in a small, dimly lit room. The walls are damp, and there is a musty smell in the air. A single door on the northern wall leads out.");
-    Room hallway("You are in a long, narrow hallway, dimly lit by flickering sconces. Doors lead north and south, and there are darkened alcoves along the walls. A sturdy chest sits against the wall.");
-    Room kitchen("You are in a warm, bustling kitchen. The smell of freshly baked bread and roasting meat fills the air. There is a sturdy wooden table in the center of the room, with a small drawer built into it.");
-
+    // Define the rooms with both a name and a description
+    Room mainRoom("Main Room", "You are in a large, empty room with stone walls. There are exits to the north and east.");
+    Room treasureRoom("Treasure Room", "You are in a brightly lit room filled with glittering treasures.");
+    
     // Define exits between rooms
-    mainRoom.addExit("north", &hallway);
-    hallway.addExit("south", &mainRoom);
-    hallway.addExit("north", &kitchen);
-    kitchen.addExit("south", &hallway);
+    mainRoom.addExit("north", &treasureRoom);
 
-    // Add furniture to the kitchen
-    Container tableDrawer("drawer", "A small drawer built into the table.");
-    tableDrawer.addObject(Object("silver key", "A small silver key, looks like it might open something important."));
-    kitchen.addFurniture(tableDrawer);
+    // Define objects
+    Object treasure("gold coins", "A pile of shiny gold coins.");
+    
+    // Define furniture
+    Container chest("chest", "An old wooden chest with a rusty lock.");
+    chest.addObject(treasure);
 
-    kitchen.addFurniture(Furniture("table", "A sturdy wooden table, well-worn from years of use, sits in the center of the room."));
-
-    // Add objects to the kitchen (on the table)
-    kitchen.addObject(Object("cutting board", "A well-used cutting board, perfect for preparing vegetables."));
-    kitchen.addObject(Object("knife", "A sharp kitchen knife, ideal for slicing and dicing."));
-    kitchen.addObject(Object("bowl", "A large mixing bowl, used for preparing dough or mixing ingredients."));
-    kitchen.addObject(Object("rolling pin", "A rolling pin, perfect for flattening dough."));
-
-    // Add a stereotypical RPG chest to the hallway
-    Container rpgChest("chest", "A sturdy chest made of oak, reinforced with iron bands. It looks like it could hold valuable items.");
-    rpgChest.addObject(Object("gold coins", "A pile of shiny gold coins, the currency of adventurers."));
-    rpgChest.addObject(Object("healing potion", "A small vial filled with a red liquid. It restores health."));
-    rpgChest.addObject(Object("old map", "An ancient map that appears to lead to a hidden treasure."));
-    hallway.addFurniture(rpgChest);
+    // Add furniture and objects to rooms
+    mainRoom.addFurniture(&chest);
 
     // Player setup
     std::string playerName;
-    Player player("default");  // Initial player object
+    std::string currentRoomName = "Main Room";
     Room* currentRoom = &mainRoom;
 
-    // Load the game state if it exists
-    std::string currentRoomName;
-    if (loadGameState(playerName, currentRoomName, player, mainRoom, hallway, kitchen)) {
+    Player player("default");  // Declare and initialize player before the if statement
+
+    // Check if saved game exists and load it
+    if (loadGameState(playerName, currentRoomName, player, mainRoom, treasureRoom)) {
         std::cout << "Welcome back, " << playerName << "!" << std::endl;
-        if (currentRoomName == "mainRoom") currentRoom = &mainRoom;
-        else if (currentRoomName == "hallway") currentRoom = &hallway;
-        else if (currentRoomName == "kitchen") currentRoom = &kitchen;
+        if (currentRoomName == "Main Room") {
+            currentRoom = &mainRoom;
+        } else if (currentRoomName == "Treasure Room") {
+            currentRoom = &treasureRoom;
+        }
     } else {
-        // No saved state, starting a new game
         std::cout << "Enter your name: ";
         std::cin >> playerName;
-        player = Player(playerName);
-        currentRoom = &mainRoom;
+        player = Player(playerName);  // Initialize the player with the entered name
     }
 
     // Main game loop
@@ -67,7 +54,7 @@ int main() {
     while (true) {
         currentRoom->describe();
 
-        std::cout << "Enter a command (look, go <direction>, n, s, e, w, examine <furniture|object>, open <furniture>, take <object>, inventory, save, autosave <on|off>, quit): ";
+        std::cout << "Enter a command (LOOK, GO <direction>, EXAMINE <furniture|object>, OPEN <container>, TAKE <object>, SAVE, LOAD, INVENTORY, QUIT): ";
         std::getline(std::cin, commandLine);
 
         std::istringstream iss(commandLine);
@@ -75,43 +62,20 @@ int main() {
         iss >> command;
         iss >> itemName;
 
-        // Handle directional shortcuts
-        if (command == "n") {
-            command = "go";
-            itemName = "north";
-        } else if (command == "s") {
-            command = "go";
-            itemName = "south";
-        } else if (command == "e") {
-            command = "go";
-            itemName = "east";
-        } else if (command == "w") {
-            command = "go";
-            itemName = "west";
-        }
+        // Convert command to uppercase for consistency
+        std::transform(command.begin(), command.end(), command.begin(), ::toupper);
 
-        if (command == "look") {
+        if (command == "LOOK") {
             currentRoom->describe();
-        } else if (command == "go") {
+        } else if (command == "GO") {
             Room* nextRoom = currentRoom->getExit(itemName);
             if (nextRoom) {
-                currentRoom->removePlayer(playerName);
                 currentRoom = nextRoom;
-                currentRoom->addPlayer(playerName);
-
-                // Autosave if enabled
-                if (config.autosaveEnabled) {
-                    saveGameState(playerName, 
-                                  currentRoom == &mainRoom ? "mainRoom" : 
-                                  currentRoom == &hallway ? "hallway" : 
-                                  "kitchen", 
-                                  player, mainRoom, hallway, kitchen);
-                    std::cout << "Game state autosaved." << std::endl;
-                }
+                currentRoomName = (nextRoom == &mainRoom) ? "Main Room" : "Treasure Room";
             } else {
                 std::cout << "You can't go that way." << std::endl;
             }
-        } else if (command == "open") {
+        } else if (command == "OPEN") {
             Furniture* furn = currentRoom->getFurniture(itemName);
             if (furn) {
                 Container* container = dynamic_cast<Container*>(furn);
@@ -124,12 +88,11 @@ int main() {
             } else {
                 std::cout << "There is no " << itemName << " here to open." << std::endl;
             }
-        } else if (command == "examine") {
+        } else if (command == "EXAMINE") {
             Furniture* furn = currentRoom->getFurniture(itemName);
             if (furn) {
                 furn->describe();
 
-                // Handle container-specific actions
                 Container* container = dynamic_cast<Container*>(furn);
                 if (container && container->isOpen()) {
                     container->describeContents();
@@ -142,69 +105,48 @@ int main() {
                     std::cout << "There is no " << itemName << " here." << std::endl;
                 }
             }
-        } else if (command == "take") {
-            Furniture* furn = currentRoom->getFurniture(itemName);
-            if (furn) {
-                Container* container = dynamic_cast<Container*>(furn);
-                if (container && container->isOpen()) {
-                    Object* object = container->getObject(itemName);
-                    if (object) {
-                        player.addObject(*object);
-                        container->removeObject(itemName);
-                        std::cout << "You take the " << itemName << "." << std::endl;
-                    } else {
-                        std::cout << "There is no " << itemName << " in the " << container->name << "." << std::endl;
-                    }
+        } else if (command == "TAKE") {
+            Container* container = dynamic_cast<Container*>(currentRoom->getFurniture(itemName));
+            if (container && container->isOpen()) {
+                Object* object = container->getObject(itemName);
+                if (object) {
+                    player.addObject(*object);
+                    container->removeObject(itemName);
+                    std::cout << "You take the " << itemName << "." << std::endl;
                 } else {
-                    std::cout << "You can't take items from a closed " << itemName << "." << std::endl;
+                    std::cout << "There is no " << itemName << " in the " << container->name << "." << std::endl;
                 }
             } else {
                 Object* object = currentRoom->getObject(itemName);
                 if (object) {
                     player.addObject(*object);
                     currentRoom->removeObject(itemName);
-
-                    // Autosave if enabled
-                    if (config.autosaveEnabled) {
-                        saveGameState(playerName, 
-                                      currentRoom == &mainRoom ? "mainRoom" : 
-                                      currentRoom == &hallway ? "hallway" : 
-                                      "kitchen", 
-                                      player, mainRoom, hallway, kitchen);
-                        std::cout << "Game state autosaved." << std::endl;
-                    }
+                    std::cout << "You take the " << itemName << "." << std::endl;
                 } else {
                     std::cout << "There is no " << itemName << " here." << std::endl;
                 }
             }
-        } else if (command == "inventory") {
+        } else if (command == "INVENTORY") {
             player.showInventory();
-        } else if (command == "save") {
-            saveGameState(playerName, 
-                          currentRoom == &mainRoom ? "mainRoom" : 
-                          currentRoom == &hallway ? "hallway" : 
-                          "kitchen", 
-                          player, mainRoom, hallway, kitchen);
-            std::cout << "Game state saved." << std::endl;
-        } else if (command == "autosave") {
-            if (itemName == "on") {
-                config.autosaveEnabled = true;
-                std::cout << "Autosave enabled." << std::endl;
-            } else if (itemName == "off") {
-                config.autosaveEnabled = false;
-                std::cout << "Autosave disabled." << std::endl;
+        } else if (command == "SAVE") {
+            if (saveGameState(playerName, currentRoomName, player, mainRoom, treasureRoom)) {
+                std::cout << "Game saved successfully." << std::endl;
             } else {
-                std::cout << "Invalid option for autosave. Use 'autosave on' or 'autosave off'." << std::endl;
+                std::cout << "Failed to save the game." << std::endl;
             }
-        } else if (command == "quit") {
-            if (config.autosaveEnabled) {
-                saveGameState(playerName, 
-                              currentRoom == &mainRoom ? "mainRoom" : 
-                              currentRoom == &hallway ? "hallway" : 
-                              "kitchen", 
-                              player, mainRoom, hallway, kitchen);
-                std::cout << "Game state saved. Goodbye!" << std::endl;
+        } else if (command == "LOAD") {
+            if (loadGameState(playerName, currentRoomName, player, mainRoom, treasureRoom)) {
+                std::cout << "Game loaded successfully." << std::endl;
+                if (currentRoomName == "Main Room") {
+                    currentRoom = &mainRoom;
+                } else if (currentRoomName == "Treasure Room") {
+                    currentRoom = &treasureRoom;
+                }
+            } else {
+                std::cout << "No saved game found." << std::endl;
             }
+        } else if (command == "QUIT") {
+            std::cout << "Goodbye!" << std::endl;
             break;
         } else {
             std::cout << "Unknown command." << std::endl;
