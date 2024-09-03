@@ -1,5 +1,5 @@
 // Object.cpp
-#include "Object.hpp"
+#include "objects/Object.hpp"
 #include <iostream>
 
 Object::Object(const std::string &name, const std::string &description) 

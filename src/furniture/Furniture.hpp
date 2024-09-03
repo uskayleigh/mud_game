@@ -1,7 +1,7 @@
 #ifndef FURNITURE_HPP
 #define FURNITURE_HPP
 
-#include "Object.hpp"
+#include "objects/Object.hpp"
 #include <vector>
 #include <string>
 
@@ -19,7 +19,7 @@ public:
     void addObject(const Object &object);
     void openDrawer();
     bool isOpen() const;
-    void describe() const override;  // Declaration of describe method
+    void describe() const override;  // Describes whether it's open or closed
     void describeContents() const;
 
 private:

@@ -1,8 +1,8 @@
 #ifndef ROOM_HPP
 #define ROOM_HPP
 
-#include "Object.hpp"
-#include "Furniture.hpp"
+#include "objects/Object.hpp"
+#include "furniture/Furniture.hpp"
 #include <vector>
 #include <map>
 #include <string>

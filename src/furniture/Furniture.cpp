@@ -1,4 +1,4 @@
-#include "Furniture.hpp"
+#include "furniture/Furniture.hpp"
 #include <iostream>
 
 Furniture::Furniture(const std::string &name, const std::string &description)
