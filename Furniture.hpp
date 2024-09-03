@@ -19,6 +19,7 @@ public:
     void addObject(const Object &object);
     void openDrawer();
     bool isOpen() const;
+    void describe() const override;  // Declaration of describe method
     void describeContents() const;
 
 private:

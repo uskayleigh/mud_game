@@ -2,14 +2,17 @@
 #include "Player.hpp"
 #include "utils.hpp"
 #include "Furniture.hpp"
+#include "Config.hpp"  // Include the config class
 #include <iostream>
 #include <sstream>
 
 int main() {
+    Config config;  // Initialize the configuration
+    
     // Room descriptions
-    Room mainRoom("You are in a small, dimly lit room. The walls are damp, and there is a musty smell in the air. There is a single door on the northern wall.");
-    Room hallway("You are in a long, narrow hallway. There are doors on either side, north and south.");
-    Room kitchen("You are in a kitchen. The smell of food fills the air. There is a single door along the southern wall.");
+    Room mainRoom("You are in a small, dimly lit room. The walls are damp, and there is a musty smell in the air. A single door on the northern wall leads out.");
+    Room hallway("You are in a long, narrow hallway, dimly lit by flickering sconces. Doors lead north and south, and there are darkened alcoves along the walls.");
+    Room kitchen("You are in a warm, bustling kitchen. The smell of freshly baked bread and roasting meat fills the air. There is a sturdy wooden table in the center of the room, with a small drawer built into it.");
 
     // Define exits between rooms
     mainRoom.addExit("north", &hallway);
@@ -22,7 +25,7 @@ int main() {
     tableDrawer.addObject(Object("silver key", "A small silver key, looks like it might open something important."));
     kitchen.addFurniture(tableDrawer);
 
-    kitchen.addFurniture(Furniture("table", "A large wooden table. It is covered with various kitchen items."));
+    kitchen.addFurniture(Furniture("table", "A sturdy wooden table, well-worn from years of use, sits in the center of the room."));
 
     // Add objects to the kitchen (on the table)
     kitchen.addObject(Object("cutting board", "A well-used cutting board, perfect for preparing vegetables."));
@@ -55,7 +58,7 @@ int main() {
     while (true) {
         currentRoom->describe();
 
-        std::cout << "Enter a command (look, go <direction>, n, s, e, w, examine <furniture|object>, open <furniture>, take <object>, inventory, save, quit): ";
+        std::cout << "Enter a command (look, go <direction>, n, s, e, w, examine <furniture|object>, open <furniture>, take <object>, inventory, save, autosave <on|off>, quit): ";
         std::getline(std::cin, commandLine);
 
         std::istringstream iss(commandLine);
@@ -86,6 +89,16 @@ int main() {
                 currentRoom->removePlayer(playerName);
                 currentRoom = nextRoom;
                 currentRoom->addPlayer(playerName);
+
+                // Autosave if enabled
+                if (config.autosaveEnabled) {
+                    saveGameState(playerName, 
+                                  currentRoom == &mainRoom ? "mainRoom" : 
+                                  currentRoom == &hallway ? "hallway" : 
+                                  "kitchen", 
+                                  player, mainRoom, hallway, kitchen);
+                    std::cout << "Game state autosaved." << std::endl;
+                }
             } else {
                 std::cout << "You can't go that way." << std::endl;
             }
@@ -127,25 +140,50 @@ int main() {
             if (object) {
                 player.addObject(*object);
                 currentRoom->removeObject(itemName);
+
+                // Autosave if enabled
+                if (config.autosaveEnabled) {
+                    saveGameState(playerName, 
+                                  currentRoom == &mainRoom ? "mainRoom" : 
+                                  currentRoom == &hallway ? "hallway" : 
+                                  "kitchen", 
+                                  player, mainRoom, hallway, kitchen);
+                    std::cout << "Game state autosaved." << std::endl;
+                }
             } else {
                 std::cout << "There is no " << itemName << " here." << std::endl;
             }
         } else if (command == "inventory") {
             player.showInventory();
         } else if (command == "save") {
-            saveGameState(playerName, 
+            if (config.autosaveEnabled) {
+                saveGameState(playerName, 
                           currentRoom == &mainRoom ? "mainRoom" : 
                           currentRoom == &hallway ? "hallway" : 
                           "kitchen", 
                           player, mainRoom, hallway, kitchen);
-            std::cout << "Game state saved." << std::endl;
+                std::cout << "Game state saved." << std::endl;
+            }
+        } else if (command == "autosave") {
+            if (itemName == "on") {
+                config.autosaveEnabled = true;
+                std::cout << "Autosave enabled." << std::endl;
+            } else if (itemName == "off") {
+                config.autosaveEnabled = false;
+                std::cout << "Autosave disabled." << std::endl;
+            } else {
+                std::cout << "Invalid option for autosave. Use 'autosave on' or 'autosave off'." << std::endl;
+            }
         } else if (command == "quit") {
-            saveGameState(playerName, 
+            
+            if (config.autosaveEnabled) 
+                {saveGameState(playerName, 
                           currentRoom == &mainRoom ? "mainRoom" : 
                           currentRoom == &hallway ? "hallway" : 
                           "kitchen", 
                           player, mainRoom, hallway, kitchen);
-            std::cout << "Game state saved. Goodbye!" << std::endl;
+                std::cout << "Game state saved. Goodbye!" << std::endl;
+                }
             break;
         } else {
             std::cout << "Unknown command." << std::endl;

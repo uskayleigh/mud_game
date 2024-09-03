@@ -28,6 +28,16 @@ bool Drawer::isOpen() const {
     return open;
 }
 
+void Drawer::describe() const {
+    std::cout << description;
+    if (open) {
+        std::cout << " The drawer is open.";
+    } else {
+        std::cout << " The drawer is closed.";
+    }
+    std::cout << std::endl;
+}
+
 void Drawer::describeContents() const {
     if (!open) {
         std::cout << "The " << name << " is closed." << std::endl;
