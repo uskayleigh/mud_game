@@ -1,7 +1,9 @@
 #include "Room.hpp"
 #include "Player.hpp"
 #include "utils.hpp"
+#include "Furniture.hpp"
 #include <iostream>
+#include <sstream>
 
 int main() {
     // Room descriptions
@@ -16,6 +18,10 @@ int main() {
     kitchen.addExit("south", &hallway);
 
     // Add furniture to the kitchen
+    Drawer tableDrawer("drawer", "A small drawer built into the table.");
+    tableDrawer.addObject(Object("silver key", "A small silver key, looks like it might open something important."));
+    kitchen.addFurniture(tableDrawer);
+
     kitchen.addFurniture(Furniture("table", "A large wooden table. It is covered with various kitchen items."));
 
     // Add objects to the kitchen (on the table)
@@ -45,30 +51,37 @@ int main() {
     }
 
     // Main game loop
-    std::string command;
+    std::string commandLine;
     while (true) {
         currentRoom->describe();
 
-        std::cout << "Enter a command (look, go <direction>, n, s, e, w, examine <furniture|object>, take <object>, inventory, save, quit): ";
-        std::cin >> command;
+        std::cout << "Enter a command (look, go <direction>, n, s, e, w, examine <furniture|object>, open <furniture>, take <object>, inventory, save, quit): ";
+        std::getline(std::cin, commandLine);
+
+        std::istringstream iss(commandLine);
+        std::string command, itemName;
+        iss >> command;
+        iss >> itemName;
 
         // Handle directional shortcuts
         if (command == "n") {
-            command = "go north";
+            command = "go";
+            itemName = "north";
         } else if (command == "s") {
-            command = "go south";
+            command = "go";
+            itemName = "south";
         } else if (command == "e") {
-            command = "go east";
+            command = "go";
+            itemName = "east";
         } else if (command == "w") {
-            command = "go west";
+            command = "go";
+            itemName = "west";
         }
 
         if (command == "look") {
             currentRoom->describe();
-        } else if (command.substr(0, 3) == "go ") {
-            std::string direction = command.substr(3);
-
-            Room* nextRoom = currentRoom->getExit(direction);
+        } else if (command == "go") {
+            Room* nextRoom = currentRoom->getExit(itemName);
             if (nextRoom) {
                 currentRoom->removePlayer(playerName);
                 currentRoom = nextRoom;
@@ -76,13 +89,31 @@ int main() {
             } else {
                 std::cout << "You can't go that way." << std::endl;
             }
+        } else if (command == "open") {
+            Furniture* furn = currentRoom->getFurniture(itemName);
+            if (furn) {
+                Drawer* drawer = dynamic_cast<Drawer*>(furn);
+                if (drawer) {
+                    drawer->openDrawer();
+                    drawer->describeContents();
+                } else {
+                    std::cout << "You can't open the " << itemName << "." << std::endl;
+                }
+            } else {
+                std::cout << "There is no " << itemName << " here to open." << std::endl;
+            }
         } else if (command == "examine") {
-            std::string itemName;
-            std::cin >> itemName;
-
             Furniture* furn = currentRoom->getFurniture(itemName);
             if (furn) {
                 furn->describe();
+
+                // Handle drawer specific actions
+                if (itemName == "drawer") {
+                    Drawer* drawer = dynamic_cast<Drawer*>(furn);
+                    if (drawer) {
+                        drawer->describeContents();
+                    }
+                }
             } else {
                 Object* object = currentRoom->getObject(itemName);
                 if (object) {
@@ -92,15 +123,12 @@ int main() {
                 }
             }
         } else if (command == "take") {
-            std::string objectName;
-            std::cin >> objectName;
-
-            Object* object = currentRoom->getObject(objectName);
+            Object* object = currentRoom->getObject(itemName);
             if (object) {
                 player.addObject(*object);
-                currentRoom->removeObject(objectName);
+                currentRoom->removeObject(itemName);
             } else {
-                std::cout << "There is no " << objectName << " here." << std::endl;
+                std::cout << "There is no " << itemName << " here." << std::endl;
             }
         } else if (command == "inventory") {
             player.showInventory();
