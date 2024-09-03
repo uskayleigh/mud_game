@@ -7,20 +7,23 @@
 #include "utils/utils.hpp"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 int main() {
     Config config;  // Initialize the configuration
     
     // Define the rooms with both a name and a description
-    Room mainRoom("Main Room", "You are in a large, empty room with stone walls. There are exits to the north and east.");
+    Room mainRoom("Main Room", "You are in a large, empty room with stone walls. There is but a single exit to the north. It is a large iron door, unrusted though yet obviously worn well down with time. There is a signle, large, keyhole towards the centre.");
     Room treasureRoom("Treasure Room", "You are in a brightly lit room filled with glittering treasures.");
     
     // Define exits between rooms
     mainRoom.addExit("north", &treasureRoom);
+    treasureRoom.addExit("south", &mainRoom);
 
     // Define objects
-    Object treasure("gold coins", "A pile of shiny gold coins.");
-    
+    Object treasure("gold-coins", "A pile of shiny gold coins.");
+    Object goldKey("gold-key", "A golden key, it looks mighty important.");
+
     // Define furniture
     Container chest("chest", "An old wooden chest with a rusty lock.");
     chest.addObject(treasure);
@@ -54,7 +57,7 @@ int main() {
     while (true) {
         currentRoom->describe();
 
-        std::cout << "Enter a command (LOOK, GO <direction>, EXAMINE <furniture|object>, OPEN <container>, TAKE <object>, SAVE, LOAD, INVENTORY, QUIT): ";
+        std::cout << "\nEnter a command (LOOK, GO <direction>, EXAMINE <furniture|object>, OPEN <container>, TAKE <object>, INVENTORY, SAVE, LOAD, QUIT):\n> ";
         std::getline(std::cin, commandLine);
 
         std::istringstream iss(commandLine);
@@ -73,7 +76,7 @@ int main() {
                 currentRoom = nextRoom;
                 currentRoomName = (nextRoom == &mainRoom) ? "Main Room" : "Treasure Room";
             } else {
-                std::cout << "You can't go that way." << std::endl;
+                std::cout << ">>> You can't go that way. <<<\n";
             }
         } else if (command == "OPEN") {
             Furniture* furn = currentRoom->getFurniture(itemName);
@@ -83,10 +86,10 @@ int main() {
                     container->open();
                     container->describeContents();
                 } else {
-                    std::cout << "You can't open the " << itemName << "." << std::endl;
+                    std::cout << ">>> You can't open the " << itemName << ". <<<\n";
                 }
             } else {
-                std::cout << "There is no " << itemName << " here to open." << std::endl;
+                std::cout << ">>> There is no " << itemName << " here to open. <<<\n";
             }
         } else if (command == "EXAMINE") {
             Furniture* furn = currentRoom->getFurniture(itemName);
@@ -102,54 +105,54 @@ int main() {
                 if (object) {
                     object->describe();
                 } else {
-                    std::cout << "There is no " << itemName << " here." << std::endl;
+                    std::cout << ">>> There is no " << itemName << " here. <<<\n";
                 }
             }
         } else if (command == "TAKE") {
-            Container* container = dynamic_cast<Container*>(currentRoom->getFurniture(itemName));
+            Container* container = dynamic_cast<Container*>(currentRoom->getFurniture("chest"));
             if (container && container->isOpen()) {
                 Object* object = container->getObject(itemName);
                 if (object) {
                     player.addObject(*object);
                     container->removeObject(itemName);
-                    std::cout << "You take the " << itemName << "." << std::endl;
+                    std::cout << ">>> You take the " << itemName << " from the chest. <<<\n";
                 } else {
-                    std::cout << "There is no " << itemName << " in the " << container->name << "." << std::endl;
+                    std::cout << ">>> There is no " << itemName << " in the chest. <<<\n";
                 }
             } else {
                 Object* object = currentRoom->getObject(itemName);
                 if (object) {
                     player.addObject(*object);
                     currentRoom->removeObject(itemName);
-                    std::cout << "You take the " << itemName << "." << std::endl;
+                    std::cout << ">>> You take the " << itemName << ". <<<\n";
                 } else {
-                    std::cout << "There is no " << itemName << " here." << std::endl;
+                    std::cout << ">>> There is no " << itemName << " here. <<<\n";
                 }
             }
         } else if (command == "INVENTORY") {
             player.showInventory();
         } else if (command == "SAVE") {
             if (saveGameState(playerName, currentRoomName, player, mainRoom, treasureRoom)) {
-                std::cout << "Game saved successfully." << std::endl;
+                std::cout << ">>> Game saved successfully. <<<\n";
             } else {
-                std::cout << "Failed to save the game." << std::endl;
+                std::cout << ">>> Failed to save the game. <<<\n";
             }
         } else if (command == "LOAD") {
             if (loadGameState(playerName, currentRoomName, player, mainRoom, treasureRoom)) {
-                std::cout << "Game loaded successfully." << std::endl;
+                std::cout << ">>> Game loaded successfully. <<<\n";
                 if (currentRoomName == "Main Room") {
                     currentRoom = &mainRoom;
                 } else if (currentRoomName == "Treasure Room") {
                     currentRoom = &treasureRoom;
                 }
             } else {
-                std::cout << "No saved game found." << std::endl;
+                std::cout << ">>> No saved game found. <<<\n";
             }
         } else if (command == "QUIT") {
-            std::cout << "Goodbye!" << std::endl;
+            std::cout << ">>> Goodbye! <<<\n";
             break;
         } else {
-            std::cout << "Unknown command." << std::endl;
+            std::cout << ">>> Unknown command. <<<\n";
         }
     }
 
