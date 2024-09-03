@@ -11,16 +11,14 @@ void Player::addObject(const Object &object) {
 }
 
 void Player::removeObject(const std::string &objectName) {
-    auto it = std::remove_if(inventory.begin(), inventory.end(),
-                             [objectName](const Object& obj) {
-                                 return obj.name == objectName;
-                             });
-    if (it != inventory.end()) {
-        inventory.erase(it, inventory.end());
-        std::cout << objectName << " has been removed from your inventory." << std::endl;
-    } else {
-        std::cout << objectName << " was not found in your inventory." << std::endl;
+    for (auto it = inventory.begin(); it != inventory.end(); ++it) {
+        if (it->name == objectName) {
+            inventory.erase(it);
+            std::cout << objectName << " has been removed from your inventory." << std::endl;
+            return;
+        }
     }
+    std::cout << objectName << " was not found in your inventory." << std::endl;
 }
 
 void Player::showInventory() const {

@@ -1,4 +1,3 @@
-// utils.cpp
 #include "utils.hpp"
 #include <fstream>
 #include <iostream>
@@ -6,12 +5,13 @@
 void saveGameState(const std::string &playerName, const std::string &currentRoomName) {
     std::ofstream file("game_state.txt");
     if (file.is_open()) {
+        std::cout << "Saving game state..." << std::endl;
         file << playerName << std::endl;
         file << currentRoomName << std::endl;
         file.close();
         std::cout << "Game state saved: " << playerName << " in " << currentRoomName << std::endl;
     } else {
-        std::cout << "Unable to save game state." << std::endl;
+        std::cout << "Error: Unable to open file for saving game state." << std::endl;
     }
 }
 
